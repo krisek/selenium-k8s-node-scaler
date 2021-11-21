@@ -1,0 +1,72 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: selenium-{{ browser | default('chrome') }}-node
+    component: selenium-grid-4
+    name: selenium-{{ browser | default('chrome') }}-node
+    scalerSessionId: '{{ session_id }}'
+    type: selenium-node
+    browser: "{{ browser | default('chrome') }}"
+  name: selenium-node-pod-{{ browser | default('chrome') }}-{{ session_id }}
+  namespace: selenium
+spec:
+  containers:
+  - env:
+    - name: SE_EVENT_BUS_HOST
+      value: selenium-event-bus
+    - name: SE_EVENT_BUS_PUBLISH_PORT
+      value: "4442"
+    - name: SE_EVENT_BUS_SUBSCRIBE_PORT
+      value: "4443"
+    image: selenium/node-{{ browser | default('chrome') }}:4.1.0-prerelease-20211105
+    imagePullPolicy: IfNotPresent
+    name: selenium-chrome-node
+    ports:
+    - containerPort: 5553
+      protocol: TCP
+    resources:
+      limits:
+        cpu: "0.5"
+        memory: 0.5Gi
+      requests:
+        cpu: "0.5"
+        memory: 0.5Gi
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /dev/shm
+      name: dshm
+
+  
+  - image: selenium/video
+    imagePullPolicy: IfNotPresent
+    name: selenium-chrome-node-recorder
+    env:
+    - name: DISPLAY_CONTAINER_NAME
+      value: localhost
+    - name: FILE_NAME
+      value: "{{ session_id }}-{{ browser | default('chrome') }}-video.mp4"
+    resources:
+      limits:
+        cpu: "0.5"
+        memory: 0.5Gi
+      requests:
+        cpu: "0.5"
+        memory: 0.5Gi      
+    volumeMounts:
+    - mountPath: /videos
+      name: videos
+  volumes:
+  - emptyDir:
+      medium: Memory
+    name: dshm
+  - name: videos
+    persistentVolumeClaim:
+      claimName: "selenium-pvc"
+
+  dnsPolicy: ClusterFirst
+  restartPolicy: Always
+  schedulerName: default-scheduler
+  securityContext: {}
+  terminationGracePeriodSeconds: 30

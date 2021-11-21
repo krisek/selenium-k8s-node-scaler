@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: "selenium-pvc"
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: selenium-fileserver-storageclass
+  resources:
+    requests:
+      storage: 2Gi
